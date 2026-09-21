@@ -1,0 +1,20 @@
+# Foundry build artifacts
+out/
+cache/
+broadcast/
+
+# Secrets — never commit these
+.env
+.env.*
+*.pem
+*.key
+
+# Node / frontend
+node_modules/
+dist/
+.vite/
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+*.log
