@@ -22,6 +22,13 @@ jobs:
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
 
+      # lib/ is gitignored (dependencies are not vendored), so a fresh checkout
+      # has no dependencies. Fetch them, pinned, before building.
+      - name: Install dependencies
+        run: |
+          git clone --depth 1 https://github.com/foundry-rs/forge-std lib/forge-std
+          git clone --depth 1 --branch v5.0.2 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
+
       - name: Show Forge version
         run: forge --version
 
