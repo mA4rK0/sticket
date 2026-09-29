@@ -1,197 +1,170 @@
-# Manware's AI Learning Toolkit
+# Sticket — tickets that stick to the person
 
-A customization that turns AI into a **learning companion** instead of a code generator. It makes you think, predict, and reason — while AI guides, questions, and diagnoses.
+On-chain event tickets for Indonesian community events: campus talks, workshops, meetups — the
+events that suffer most from dead tickets and scalpers.
 
-**Core idea:** You try first. AI helps only after you commit to an answer.
+The ownership ledger is a smart contract on Monad, not a server. There is no backend and no
+database: who owns a ticket, whether it has been used, and what it may be resold for are all
+enforced by code that nobody can override at runtime — including the organizer.
 
-> **Looking for a different AI agent?** This repo has separate branches for each supported tool. Switch to the branch matching your agent — `copilot`, `cursor`, `claude-code`, `opencode`, or `antigravity` — to get the right configuration and code.
+> **Hackathon:** Monad Metropolis · Track 02 — Consumer Products & Payments
+> **Full plan:** [`blueprint.md`](./blueprint.md)
+
+**Deployed (Monad testnet, chain id 10143):** [`0x080266e2e193Afe65f72099E1cB804A4202D0fc8`](https://testnet.monadscan.com/address/0x080266e2e193Afe65f72099E1cB804A4202D0fc8)
+
+Price 0.01 MON · supply 500 · organizer `0x036A…72B` · sales open until `eventStart` 1790988897 ·
+deploy tx `0x6a5c3c63f6c1d18051854360dc9e74f084cd17eefb4d9a46d8ae247ead6a6a7a`
+
+Development instances, their terms, every transaction hash, and the on-chain verification evidence live in
+[`docs/deployments.md`](./docs/deployments.md).
 
 ---
 
-## How It Works
+## What the contract does
 
+| Function | Who may call | Rules enforced |
+|---|---|---|
+| `buy()` | anyone | exact payment, one ticket per call, `maxSupply` quota, sales close at `eventStart` |
+| `listForSale(tokenId, price)` | the ticket's current owner | not used, `0 < price <= officialPrice`; the ticket moves **into the contract** |
+| `unlist(tokenId)` | only the recorded seller | returns the ticket, clears the listing |
+| `buyResale(tokenId)` | anyone | listing exists, exact payment, cap re-checked, not used; pays the seller minus the 5% fee |
+| `checkIn(tokenId)` | organizer only | after `eventStart`, ticket not escrowed, not already used; records a timestamp |
+| `withdraw()` | organizer only | after `eventStart`; sends the whole balance to the organizer |
+| `transferFrom` / `safeTransferFrom` | — | **always revert.** Every user-initiated transfer is blocked |
+
+The last row is the product. A ticket cannot leave this contract except through the capped resale
+market, so there is no dark channel to sell one through.
+
+## The anti-scalping guarantee, stated precisely
+
+- A ticket can never be sold for more than the **official price**, on any hand. The cap is the
+  event's official price and does not drop: a second-hand buyer's ceiling is the same as the first buyer's.
+- A ticket can never move outside this contract. Every user-initiated ERC-721 transfer reverts.
+- **What the cap does NOT do:** it does not bound profit on a *discounted* listing. If a holder
+  lists below the official price, a buyer can resell at the cap and profit. The cap stops buying at
+  face and flipping above face; it does not stop arbitrage against a distressed seller.
+- Every resale costs the seller the 5% organizer fee, so selling at face is a small loss regardless.
+
+## Quick start
+
+Dependencies are **not vendored** — `contracts/lib/` is gitignored, exactly as Foundry expects.
+Fetch them (this is the same step CI runs):
+
+```bash
+cd contracts
+
+git clone --depth 1 --branch v1.16.2 https://github.com/foundry-rs/forge-std lib/forge-std
+git clone --depth 1 --branch v5.0.2 https://github.com/OpenZeppelin/openzeppelin-contracts lib/openzeppelin-contracts
+
+forge test
 ```
-You try → You predict → AI gives hints → You implement → You test → You explain → AI reviews → You retrieve later
+
+`forge` installs the right `solc` automatically. Expect **39 passing tests**.
+
+## Deploy
+
+```bash
+cp .env.example .env          # fill in price, organizer, supply, event start, RPC
+cast wallet import deployer --interactive     # paste a key; no key ever touches the source
 ```
 
-AI never writes the solution for you. It asks questions, gives small hints, and tests your understanding. The harder you think, the more you learn.
+Then, from `contracts/`, with the variables exported:
 
----
+```bash
+forge script script/Deploy.s.sol --rpc-url "$MONAD_RPC_URL" --account deployer --broadcast -vvv
+```
 
-## Quick Start
+The script reads everything from the environment, so the same file deploys to a local `anvil`, to
+Monad testnet, or anywhere else without edits.
 
-1. **Clone or copy this repo** into your project (or use it as a template).
-2. **Open OpenCode** in your terminal or editor.
-3. **Type a slash command** like `/hint`, `/debug`, `/explain`, etc.
-4. **Answer the questions** OpenCode asks you. Don't skip them — that's where the learning happens.
-5. **Write the code yourself.** AI will guide, not write.
+## The web app
 
----
+`app/` is a Vite + React + TypeScript single page app. It talks to the contract directly: no backend, no database, no indexer. It holds its own toolchain and never imports from `contracts/`; the only bridge is the generated ABI file and the deployed address.
 
-## The 12 Commands
+```bash
+cd app
+cp .env.example .env      # adjust the contract addresses if needed
+npm install
+npm run dev               # http://localhost:5173
+```
 
-Each command is a workflow. Invoke it with a `/command` in OpenCode.
-
-### `/learn`
-**The entry point.** Tell it what you want to learn, and it picks the right workflow for you. Use this when you're not sure which command to use.
-
-**Use when:** You're starting a session and don't know where to begin.
-
----
-
-### `/hint`
-**Your main problem-solving tool.** First, you predict what should happen. Then, AI gives you the smallest hint needed — one level at a time, from a question all the way up to full code (only if you ask for it).
-
-**Use when:** You're stuck on a problem, bug, or concept and want incremental help without being handed the answer.
-
----
-
-### `/debug`
-**Bug diagnosis through hypothesis testing.** AI asks what you expected, what happened, and what you think is wrong — then guides you to find the bug yourself.
-
-**Use when:** Your code doesn't work and you want to understand *why*, not just get a fix.
-
----
-
-### `/autopsy`
-**Post-mortem after fixing a bug.** You fill in what happened, what you believed, what actually happened, and what you missed. AI classifies the bug and suggests prevention.
-
-**Use when:** You just fixed a non-trivial bug and want to learn from it so it doesn't happen again.
-
----
-
-### `/read`
-**Understand unfamiliar code.** AI asks you concrete questions one at a time: "What does this input produce?" "What happens after iteration 3?" You reconstruct the mental model yourself.
-
-**Use when:** You're reading someone else's code, old code, framework internals, or library source.
-
----
-
-### `/code-review`
-**Educational code review.** Before AI reviews your code, you identify the weakest part yourself. Then AI labels issues by severity and asks discovery questions instead of rewriting your code.
-
-**Use when:** You've written something and want a senior-developer-style review that teaches you.
-
----
-
-### `/test`
-**Design tests before implementing.** You state the contract, identify the smallest passing/failing inputs, and derive test cases. AI exposes ambiguities in your spec.
-
-**Use when:** You're about to implement a feature and want to think through edge cases first.
-
----
-
-### `/explore`
-**Explore design space.** You defend your current solution, AI offers conceptually different alternatives, then introduces constraints one at a time to stress-test your design.
-
-**Use when:** You have a working solution and want to understand tradeoffs, or when you want to practice handling real-world constraints like scale, concurrency, or failure.
-
----
-
-### `/arch`
-**Architecture interview.** AI asks one focused question at a time about requirements, state, interfaces, failure modes, etc. You sketch the design; AI challenges your assumptions.
-
-**Use when:** You're designing a non-trivial feature and want to think through it before coding.
-
----
-
-### `/explain`
-**Teach-back test.** You explain a concept in your own words, as if teaching a beginner. AI probes for gaps, vague terms, and contradictions — then gives a concise assessment.
-
-**Use when:** You think you understand something and want to verify it.
-
----
-
-### `/retrieve`
-**Spaced retrieval practice.** AI reads your learning logs (if they exist) and asks you a short mix of prediction, debugging, and application questions from past material.
-
-**Use when:** You're starting a coding session and want a quick warm-up to reinforce what you've learned.
-
----
-
-### `/api`
-**Learn an API deeply.** AI walks you through 7 questions: what problem it solves, what assumptions it makes, what alternatives exist, when *not* to use it, and its failure modes. Then it points you to official docs.
-
-**Use when:** You encounter a new library, framework, or API and want real understanding, not just syntax.
-
----
-
-## The 4 Skills
-
-Skills are reusable behaviors that work across multiple commands. You don't invoke them directly — they shape how AI responds when relevant.
-
-| Skill | What it does |
+| Script | Purpose |
 |---|---|
-| **debugging** | Separates expected vs actual behavior, requires a hypothesis before suggesting causes, picks the smallest next experiment. |
-| **examination** | Tests understanding through prediction, explanation, application, and transfer. Corrects the smallest misconception first. |
-| **code-review** | Prioritizes correctness over style, asks discovery questions before rewrites, distinguishes bugs from preferences. |
-| **retrieval** | Mixes recent and older material, prefers prediction over definitions, adapts difficulty to your performance. |
+| `npm run dev` | development server |
+| `npm run build` | typecheck then production build |
+| `npm run typecheck` | types only |
+| `npm test` | unit tests for the door rules and the ticket code format |
+| `npm run gen:abi` | regenerate `src/lib/abis/EventTickets.ts` from the compiled contract |
+| `npm run lint` | oxlint |
 
----
+Configuration, all of it optional except the contract address:
 
-## Learning Logs (Optional)
+| Variable | Meaning |
+|---|---|
+| `VITE_MONAD_RPC_URL` | RPC endpoint for Monad testnet |
+| `VITE_EVENT_ADDRESS` | the contract the buyer pages use |
+| `VITE_SCANNER_EVENT_ADDRESS` | the contract the scanner uses; defaults to the above. Check-in only works after an instance's `eventStart`, so this is usually a different deployment |
+| `VITE_PRIVY_APP_ID` | enables email login with an embedded wallet. Empty by default, and Privy's bundle is then never downloaded |
 
-A lightweight folder for recording meaningful learning events. You don't need to update these after every interaction — only when something sticks.
+Two things about the wallet layer worth knowing:
+
+- Without a Privy App ID the app uses any injected browser wallet. Phantom and MetaMask both work; Phantom supports Monad natively.
+- With a Privy App ID, Privy's wrapper is loaded on demand and provides email login plus an embedded wallet. Privy has no gas sponsorship on a custom chain, so an embedded wallet starts at 0 MON and needs funding before it can buy anything.
+
+## Tests
+
+`contracts/test/EventTickets.t.sol` — 39 Foundry tests:
+
+- **Purchase:** mint to buyer, sequential ids, exact-payment boundaries (`PRICE ± 1`, zero), quota
+  boundary (last ticket sells, next reverts), sales-closed boundary (`eventStart - 1` vs `eventStart`).
+- **Anti-scalping:** user `transferFrom` reverts and ownership is unchanged; the mint still works, which
+  proves the guard does not break issuance.
+- **Resale:** escrow on listing, unlisting restores ownership, non-seller cannot unlist, non-owner
+  cannot list, above-cap and zero-price listings revert, wrong payment reverts, double listing reverts,
+  resale cannot happen after sales close, and a second-hand resale proves the cap does not drop.
+- **Check-in:** timestamp recorded, double check-in reverts, non-organizer reverts, unknown ticket
+  reverts, escrowed ticket reverts, before-`eventStart` reverts.
+- **Money:** proceeds reach the organizer, non-organizer cannot withdraw, withdrawal is time-locked,
+  the contract's balance and the seller's payout are asserted exactly.
+
+## Known limitations
+
+- **No refunds.** If the event is cancelled, buyers have no on-chain recourse; the organizer is the
+  only party who can move the money. Sales closing at `eventStart` bounds the window but does not
+  guarantee delivery.
+- **Operator trust.** The organizer can withdraw all proceeds after `eventStart`, and can mark any
+  non-escrowed ticket as used. Anti-scalping protects holders from each other, not from the organizer.
+- **Escrow changes what "owner" means.** While a ticket is listed, `ownerOf(tokenId)` is the
+  contract. UIs must read `listings(tokenId).seller` to show who is selling.
+- **`officialPrice` is immutable.** A mispriced event requires redeployment.
+- **`eventStart` is immutable.** A postponed event leaves the withdrawal gate at the original date.
+- **Check-ins are irreversible** (no undo for a mis-scanned QR) and have no upper time bound.
+- **ERC-721 approvals still succeed but grant nothing** — `approve`/`setApprovalForAll` write state,
+  while every transfer reverts. Marketplace tooling will offer a buy button that fails on-chain.
+- **Timestamps** come from `block.timestamp`, which a validator can nudge by seconds — irrelevant at
+  event timescales, but it is an assumption.
+
+## Repo layout
 
 ```
-learning/
-├── mistakes.md    # Bugs, misconceptions, recurring patterns
-├── concepts.md    # Durable understanding worth keeping
-├── questions.md   # Unresolved questions to revisit
-└── review.md      # Retrieval prompts and review metadata
+blueprint.md              # full project plan and design intent
+contracts/                # Foundry project
+├── src/EventTickets.sol  # the only contract
+├── test/                 # 39 Foundry tests
+├── script/Deploy.s.sol   # env-driven deployment
+└── .env.example          # deployment variables
+app/                      # Vite + React + TypeScript front end
+├── src/lib/scanVerification.ts  # the door rules, unit tested
+├── test/                 # app unit tests
+└── .env.example          # app configuration
+tasks/                    # plan, todo and lessons kept while building
+docs/LEARNING-TOOLKIT.md  # the learning harness used while building this
+learning/                 # learning logs kept during development
 ```
 
-The `/retrieve` command reads these files to personalize your review sessions.
+## Built with
 
----
-
-## Adaptive Behavior
-
-The toolkit adapts to you:
-
-- **If you're solving things easily:** AI asks deeper "why" questions, introduces harder constraints, and reduces unnecessary prompting.
-- **If you're struggling:** AI lowers the hint level, revisits prerequisites, and creates targeted practice — without just giving you the answer.
-
----
-
-## Shipping Mode
-
-This toolkit is for learning. When you need to ship:
-
-> Just say **"ship this"** or ask for a direct implementation.
-
-AI will switch to normal engineering mode. The learning rules only apply when you invoke a learning command.
-
----
-
-## How It's Organized
-
-```
-AGENTS.md                          # Main instructions with philosophy and skills
-.opencode/
-├── commands/                      # 12 user-facing workflows (slash commands)
-└── skills/                        # 4 reusable AI behaviors
-learning/                          # Optional learning logs
-```
-
----
-
-## Requirements
-
-- **OpenCode** in your terminal or editor
-- No other dependencies, scripts, or setup needed
-
----
-
-## Limitations
-
-- **Learning logs** are optional and manual. The toolkit works fine without them.
-- This is a prompt-based toolkit, not an app. It works through OpenCode conversations.
-
----
-
-## Philosophy
-
-> Make AI reduce the friction around learning programming **without reducing the amount of thinking the learner has to do.**
-
-If you're not thinking, you're not learning.
+This project was built using [Manware's AI Learning Toolkit](./docs/LEARNING-TOOLKIT.md) as the
+learning harness — an AI setup that refuses to write the solution and instead asks questions, tests
+predictions, and reviews code. The git history shows the process: design interview, tests written
+before the code that satisfies them, and a review that found a hole in the pitch before a judge could.

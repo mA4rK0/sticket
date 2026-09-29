@@ -13,7 +13,7 @@ Keep unresolved questions concise. Add a date or context when it helps.
 
 ## 2026-09-13: Why `super._update(...)` and not `_update(...)` inside the override?
 
-- **Context:** The NEPEL anti-calo guard is a single override of `_update` that reverts when the third argument is not the zero address. Open question: why can't the override just call `_update(to, tokenId, auth)`?
+- **Context:** The Sticket anti-calo guard is a single override of `_update` that reverts when the third argument is not the zero address. Open question: why can't the override just call `_update(to, tokenId, auth)`?
 - **Current hypothesis:** None formed yet.
 - **Evidence to check:** Write the override both ways in a Foundry test and observe what happens — specifically what happens to the call when a function dispatches to itself.
 - **Status:** resolved (2026-09-14). A bare internal call to a `virtual` function resolves to the **most-derived override** — the body you are standing in — so `_update(to, tokenId, auth)` calls itself and recurses until gas is exhausted. `super._update` instead jumps to the **next implementation up the inheritance chain** (ERC721's real body) exactly once, then returns. Note the path: on `transferFrom`, `auth` is a real address, so the guard reverts *before* the recursive line is reached — the recursion only manifests where the guard passes, i.e. `buyResale` with `auth == address(0)`. Still to verify in code: exact failure mode (OOG vs. revert) via a Foundry test.

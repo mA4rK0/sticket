@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {EventTickets} from "../src/EventTickets.sol";
+import {EventTickets} from "src/EventTickets.sol";
 
 /// @notice Deploys one EventTickets contract for one event.
 /// @dev Configuration comes from the environment so the same script works against

@@ -1,127 +1,127 @@
-# 🎟️ NEPEL — Blueprint Lengkap Proyek
+# 🎟️ Sticket — Full Project Blueprint
 
-> **Tiket yang nempel di orang** — tiket acara komunitas anti-hangus & anti-calo, on-chain di Monad.
-> **Hackathon:** Monad Metropolis · **Track 02 — Consumer Products & Payments** ($30.000 / 3 tim terbaik)
-> **Build window:** 1 Sep – 13 Okt 2026 · **Target submit:** 12 Okt (buffer 1 hari) · Winners: 3 Nov
-> **Sumber resmi:** <https://monad.xyz/developers/hackathons/metropolis>
-
----
-
-## Daftar Isi
-
-1. [Identitas & Ide](#1-identitas--ide)
-2. [Arsitektur Sederhana](#2-arsitektur-sederhana)
-3. [User Workflow](#3-user-workflow)
-4. [Gambaran 30 Detik: Sistem Ini Apa?](#4-gambaran-30-detik-sistem-ini-apa)
-5. [Tech Stack Lengkap (semua Rp0)](#5-tech-stack-lengkap-semua-rp0)
-6. [Arsitektur Keseluruhan](#6-arsitektur-keseluruhan)
-7. [Riwayat Hidup Sebuah Tiket (inti logika anti-calo)](#7-riwayat-hidup-sebuah-tiket-inti-logika-anti-calo)
-8. [Alur Sistem Kerja — Sequence Diagrams](#8-alur-sistem-kerja--sequence-diagrams)
-9. [Alur Kerja Dev: 4 Fase (10 Sep → 12 Okt)](#9-alur-kerja-dev-4-fase-10-sep--12-okt)
-10. [Directory Tree Lengkap (F0 → Produksi/Submit)](#10-directory-tree-lengkap-f0--produksisubmit)
-11. [Sponsor & Bounty Metropolis](#11-sponsor--bounty-metropolis)
-12. [Syarat Submit Resmi](#12-syarat-submit-resmi)
-13. [Kamus Mini](#13-kamus-mini)
+> **The ticket that sticks to its owner** — anti-scalping, anti-dead-ticket event ticketing for community events, on-chain on Monad.
+> **Hackathon:** Monad Metropolis · **Track 02 — Consumer Products & Payments** ($30,000 / top 3 teams)
+> **Build window:** 1 Sep – 13 Oct 2026 · **Submission target:** 12 Oct (1 day buffer) · Winners: 3 Nov
+> **Official source:** <https://monad.xyz/developers/hackathons/metropolis>
 
 ---
 
-## 1. Identitas & Ide
+## Table of contents
+
+1. [Identity and idea](#1-identity-and-idea)
+2. [Simple architecture](#2-simple-architecture)
+3. [User workflow](#3-user-workflow)
+4. [The 30-second overview: what is this system?](#4-the-30-second-overview-what-is-this-system)
+5. [Full tech stack (everything at zero cost)](#5-full-tech-stack-everything-at-zero-cost)
+6. [Overall architecture](#6-overall-architecture)
+7. [The life of a ticket (the core anti-scalping logic)](#7-the-life-of-a-ticket-the-core-anti-scalping-logic)
+8. [How the system works: sequence diagrams](#8-how-the-system-works-sequence-diagrams)
+9. [Development workflow: four phases (10 Sep to 12 Oct)](#9-development-workflow-four-phases-10-sep-to-12-oct)
+10. [Full directory tree (F0 to production/submission)](#10-full-directory-tree-f0-to-productionsubmission)
+11. [Metropolis sponsors and bounties](#11-metropolis-sponsors-and-bounties)
+12. [Official submission requirements](#12-official-submission-requirements)
+13. [Mini glossary](#13-mini-glossary)
+
+---
+
+## 1. Identity and idea
 
 ### Track 02 — Consumer Products & Payments
 
-**Ide 2: "Tiket yang Nempel di Orang" — Tiket acara komunitas anti-hangus**
+**Idea 2: "The ticket that sticks to its owner" — anti-dead-ticket ticketing for community events**
 
-**Konsep:** Tiket digital yang kepemilikannya dicatat on-chain, jadi kalau acara pindah platform atau kamu pindah komunitas, tiketmu tetap hidup. Bisa atur aturan resale otomatis (misal: harga jual maksimal = harga beli, biar calo mati) — ini ide resmi #2 track-nya.
+**Concept:** a digital ticket whose ownership is recorded on-chain, so if the event moves to another platform or you move to another community, your ticket stays alive. Resale rules can be set automatically (for example: resale price capped at the purchase price, so scalpers cannot profit) — this is the track's official idea number 2.
 
-- **MVP-nya:** kontrak NFT sederhana (tiket) + halaman pembelian/claim + QR check-in
-- **Sektor nyata Indonesia:** acara kampus, workshop, kajian, community meetup — semua penderita "tiket hangus"
-- **Kesulitan solo:** ⭐️⭐️⭐️/5 (NFT-nya gampang, tapi sistem check-in menambah kerja)
-- **Nilai jual ke juri:** aturan resale terprogram = fitur yang tidak bisa ditawari Tiket/Loket — onchain-native
+- **The MVP:** a simple NFT contract (the ticket) plus a buy/claim page and a QR check-in
+- **The real Indonesian sector:** campus events, workshops, study circles, community meetups — everyone who suffers from dead tickets
+- **Solo difficulty:** 3/5 (the NFT part is easy, the check-in system adds work)
+- **What sells it to judges:** programmable resale rules are something Tiket or Loket cannot offer — on-chain native
 
 ---
 
-## 2. Arsitektur Sederhana
+## 2. Simple architecture
 
 ```
-TicketFactory.sol  ← panitia buat event dari UI (deploy 1 kontrak per event)
-    └─ EventTickets.sol (ERC-721 di Monad testnet 10143)
-         ├─ buy()        : bayar → tiket + QR
-         ├─ resale()     : harga DIKUNCI ≤ harga beli + fee 5% panitia (on-chain)
-         ├─ _update()    : transfer di luar jalur resmi = REVERT ← inti anti-calo
-         └─ checkIn()    : scan 1x per tiket, tercatat di chain
+TicketFactory.sol  <- the organizer creates an event from the UI (one contract deployed per event)
+    └─ EventTickets.sol (ERC-721 on Monad testnet 10143)
+         ├─ buy()        : pay -> ticket + QR
+         ├─ resale()     : price LOCKED at or below the purchase price + 5% organizer fee (on-chain)
+         ├─ _update()    : any transfer outside the official path = REVERT <- the anti-scalping core
+         └─ checkIn()    : one scan per ticket, recorded on-chain
 
-App React (tanpa backend, tanpa DB — semua dari chain, hemat biaya)
+React app (no backend, no database: everything comes from the chain)
 ```
 
 ---
 
-## 3. User Workflow
+## 3. User workflow
 
-### 👤 Pembeli
+### 👤 Buyer
 
-> Buka link event → lihat sisa tiket live → "Ambil Tiket" → login email (wallet otomatis, tanpa kata "blockchain" di UI) → bayar → QR di "Tiket Saya" → hari-H tunjuk QR → petugas scan → masuk. Tidak bisa datang? Jual ulang dengan harga otomatis dibatasi ≤ harga beli — calo tidak bisa untung.
+> Open the event link -> see the live remaining count -> "Get a ticket" -> log in by email (a wallet is created automatically, and the word "blockchain" never appears in the UI) -> pay -> QR appears under "My tickets" -> on the day, show the QR -> staff scan it -> entry. Cannot attend? Resell it, with the price automatically capped at the purchase price, so a scalper cannot profit.
 
-### 🎪 Panitia
+### 🎪 Organizer
 
-> Form "Buat Event" → bagikan link → dashboard penjualan real-time → hari-H buka halaman Scanner di HP → hijau/merah → dana fee resale masuk otomatis.
-
----
-
-## 4. Gambaran 30 Detik: Sistem Ini Apa?
-
-NEPEL = aplikasi web penjualan tiket acara, tapi **buku catatan resminya adalah blockchain Monad**, bukan server. Tiga konsekuensi penting:
-
-1. **Tidak ada backend & tidak ada database.** Server itu tempat kepercayaan disimpan (dan bisa curang/tutup). Di sini, semua catatan — siapa punya tiket, tiket mana yang sudah dipakai, berapa harga jual maksimal — tersimpan di kontrak pintar. Frontend cuma "pembaca & penulis" ke chain.
-2. **Tiket = NFT (ERC-721).** Mirip sertifikat tanah digital: ada nomor unik, ada pemilik sah, dan perpindahan hanya sah kalau lewat prosedur resmi.
-3. **Aturan anti-calo dipatri di kontrak, bukan di UI.** UI bisa di-bypass orang; kontrak tidak bisa "dipaksa" siapa pun. Ini inti pitch kita.
+> "Create event" form -> share the link -> real-time sales dashboard -> on the day, open the scanner page on a phone -> green or red -> resale fees arrive automatically.
 
 ---
 
-## 5. Tech Stack Lengkap (semua Rp0)
+## 4. The 30-second overview: what is this system?
 
-| Lapisan | Alat | Tugasnya | Biaya |
+Sticket is a web app for selling event tickets, but its **official record book is the Monad blockchain**, not a server. Three consequences matter:
+
+1. **No backend and no database.** A server is where trust is kept (and where it can cheat or shut down). Here every record — who owns a ticket, which tickets have been used, what the maximum resale price is — lives in a smart contract. The frontend only reads and writes to the chain.
+2. **A ticket is an NFT (ERC-721).** Like a digital land certificate: a unique number, a rightful owner, and transfers that are only valid when they follow the official procedure.
+3. **The anti-scalping rules are welded into the contract, not the UI.** A UI can be bypassed; a contract cannot be forced by anyone. That is the heart of the pitch.
+
+---
+
+## 5. Full tech stack (everything at zero cost)
+
+| Layer | Tool | Job | Cost |
 |---|---|---|---|
-| Blockchain | **Monad Testnet** (chain 10143) | "Server" tempat semua data & dana | Gratis (faucet MON) |
-| Kontrak | **Solidity** + **OpenZeppelin** (ERC-721) | Bahasa kontrak + komponen teruji keamanannya | Gratis |
-| Toolkit kontrak | **Foundry** (`forge`, `cast`, `anvil`) | Tulis test, deploy, debug kontrak | Gratis |
-| Login & wallet | **Privy** | User login pakai email/Google → wallet dibuat otomatis "di balik layar" | Gratis ≤ ~1.000 user/bln |
-| Frontend | **Vite + React + TypeScript** | Aplikasi web pembeli & panitia | Gratis |
-| Penghubung chain | **wagmi + viem** | Library React ↔ kontrak (baca data, kirim transaksi) | Gratis |
-| QR pembeli | **qrcode.react** | Gambar QR dari data tiket | Gratis |
-| QR scanner | **html5-qrcode** | Kamera HP panitia membaca QR | Gratis |
-| RPC | **Alchemy** (sponsor) | "Jalan tol" frontend ↔ Monad, lebih stabil dari RPC publik | Gratis 30 juta CU/bln |
-| Hosting | **Vercel** | App online bisa dibuka lewat link | Gratis |
-| Versioning | **Git + GitHub** | Riwayat kode + bukti untuk juri | Gratis |
+| Blockchain | **Monad Testnet** (chain 10143) | The "server" holding all data and funds | Free (MON faucet) |
+| Contracts | **Solidity** + **OpenZeppelin** (ERC-721) | Contract language plus security-reviewed components | Free |
+| Contract toolkit | **Foundry** (`forge`, `cast`, `anvil`) | Write tests, deploy, debug contracts | Free |
+| Login and wallet | **Privy** | Users log in with email or Google and a wallet is created behind the scenes | Free up to roughly 1,000 users per month |
+| Frontend | **Vite + React + TypeScript** | The buyer and organizer web app | Free |
+| Chain client | **wagmi + viem** | React to contract bridge (read data, send transactions) | Free |
+| Buyer QR | **qrcode.react** | Render the QR from the ticket data | Free |
+| QR scanner | **html5-qrcode** | The organizer's phone camera reading the QR | Free |
+| RPC | **Alchemy** (sponsor) | A faster road between the frontend and Monad than the public RPC | Free, 30 million compute units per month |
+| Hosting | **Vercel** | Puts the app online behind a link | Free |
+| Versioning | **Git + GitHub** | Code history and evidence for the judges | Free |
 
 ---
 
-## 6. Arsitektur Keseluruhan
+## 6. Overall architecture
 
 ```mermaid
 flowchart TB
-    subgraph Klien["Browser HP / Laptop"]
-        PB["Pembeli"]
-        PJ["Panitia"]
-        PT["Petugas (scanner)"]
+    subgraph Klien["Phone or laptop browser"]
+        PB["Buyer"]
+        PJ["Organizer"]
+        PT["Door staff (scanner)"]
     end
 
-    subgraph FE["Frontend — Vite+React+TS (hosting Vercel)"]
-        HB["Halaman Event + Beli"]
-        HM["Tiket Saya + QR"]
-        HR["Jual Ulang"]
-        HD["Buat Event + Dashboard"]
-        HS["Halaman Scanner"]
+    subgraph FE["Frontend — Vite+React+TS (hosted on Vercel)"]
+        HB["Event page and buy"]
+        HM["My tickets and QR"]
+        HR["Resale"]
+        HD["Create event and dashboard"]
+        HS["Scanner page"]
     end
 
     subgraph CH["Monad Testnet 10143"]
         F["TicketFactory.sol"]
-        T1["EventTickets — Event A"]
-        T2["EventTickets — Event B"]
-        T3["EventTickets — dst..."]
+        T1["EventTickets — event A"]
+        T2["EventTickets — event B"]
+        T3["EventTickets — and so on"]
     end
 
-    subgraph EXT["Layanan eksternal gratis"]
-        PR["Privy (login + wallet)"]
+    subgraph EXT["Free external services"]
+        PR["Privy (login and wallet)"]
         AL["Alchemy (RPC)"]
     end
 
@@ -139,334 +139,351 @@ flowchart TB
     HS -->|"checkIn()"| T1
 ```
 
-**Kenapa ada Factory?** Supaya tiap acara punya kontrak tiket sendiri yang terisolasi (kalau ada bug di event A, event B aman) — dan panitia jadi pemilik penuh kontrak acaranya. Factory = "cetakan" yang mencetak kontrak baru per acara.
+**Why is there a factory?** So that every event has its own isolated ticket contract (a bug in event A cannot touch event B), and so the organizer fully owns their event's contract. The factory is a mould that stamps out a new contract per event.
 
 ---
 
-## 7. Riwayat Hidup Sebuah Tiket (inti logika anti-calo)
+## 7. The life of a ticket (the core anti-scalping logic)
 
 ```mermaid
 stateDiagram-v2
-    [*] --> BelumAda
-    BelumAda --> MilikPembeli: buy() — bayar MON, tiket dicetak (mint)
-    MilikPembeli --> Dipasarkan: listForSale() — harga ≤ harga resmi
-    Dipasarkan --> MilikPembeliBaru: buyResale() — 95% ke penjual, 5% fee panitia
-    Dipasarkan --> MilikPembeli: batal jual (unlist)
-    MilikPembeli --> MilikPembeli: transfer liar = REVERT (tiket tidak berpindah)
-    MilikPembeli --> Terpakai: checkIn() hari-H oleh petugas
-    MilikPembeliBaru --> Dipasarkan: jual lagi — cap tetap harga resmi
-    Terpakai --> [*]: kenang-kenangan (tidak bisa dijual lagi)
+    [*] --> DoesNotExist
+    DoesNotExist --> OwnedByBuyer: buy() — pay MON, ticket is minted
+    OwnedByBuyer --> Listed: listForSale() — price at or below the official price
+    Listed --> OwnedBySecondBuyer: buyResale() — 95% to the seller, 5% organizer fee
+    Listed --> OwnedByBuyer: cancel the sale (unlist)
+    OwnedByBuyer --> OwnedByBuyer: rogue transfer = REVERT (the ticket does not move)
+    OwnedByBuyer --> Used: checkIn() on the day, by the door staff
+    OwnedBySecondBuyer --> Listed: resell again — the cap stays at the official price
+    Used --> [*]: a keepsake (it can never be sold again)
 ```
 
-**Poin paling penting:** cap harga tidak turun ke pembeli kedua. Cap = harga resmi acara, permanen. Calo beli → jual maksimal sama dengan harga resmi → **tidak mungkin untung**, berapa kali pun tiket berpindah tangan. Dan `Terpakai` (sudah check-in) = dead end, tidak bisa dijual lagi.
+**The most important point:** the price cap does not drop for the second buyer. The cap is the event's official price, permanently. A scalper buys and can resell for at most the official price, so **profit is impossible** no matter how many hands the ticket passes through. And `Used` (already checked in) is a dead end: it can never be sold again.
 
 ---
 
-## 8. Alur Sistem Kerja — Sequence Diagrams
+## 8. How the system works: sequence diagrams
 
-### 8.1 Panitia membuat acara
+### 8.1 The organizer creates an event
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor PJ as Panitia
+    actor PJ as Organizer
     participant FE as Frontend
     participant PR as Privy
     participant F as TicketFactory.sol
     participant M as Monad Testnet
 
-    PJ->>FE: Login email (Privy) → buka "Buat Event"
-    FE-->>PR: buat/ambil wallet panitia
-    PJ->>FE: Isi form: nama, tanggal, venue, harga, kuota, fee
-    FE->>F: createEvent(nama, harga, kuota, fee)
-    F->>M: deploy kontrak EventTickets baru
-    F->>F: set panitia = pemilik kontrak acara
-    M-->>FE: event "acara baru dibuat" (dari chain)
-    FE-->>PJ: Link acara siap dibagikan + dashboard
+    PJ->>FE: Log in by email (Privy), open "Create event"
+    FE-->>PR: create or fetch the organizer wallet
+    PJ->>FE: Fill the form: name, date, venue, price, quota, fee
+    FE->>F: createEvent(name, price, quota, fee)
+    F->>M: deploy a new EventTickets contract
+    F->>F: set organizer = owner of the event contract
+    M-->>FE: an "event created" event (from the chain)
+    FE-->>PJ: A shareable event link plus the dashboard
 ```
 
-### 8.2 Pembeli membeli tiket (jalur "5 menit pertama")
+### 8.2 A buyer buys a ticket (the "first five minutes" path)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor PB as Pembeli
+    actor PB as Buyer
     participant FE as Frontend
     participant PR as Privy
     participant T as EventTickets.sol
     participant M as Monad Testnet
 
-    PB->>FE: Buka link acara (dari undangan panitia)
-    FE->>T: baca: nama, harga, SISA TIKET (live)
-    FE-->>PB: Halaman acara + tombol "Ambil Tiket"
-    PB->>FE: Klik beli → login email/Google
-    FE->>PR: minta wallet
-    PR-->>PB: wallet invisible dibuat (user tidak lihat istilah kripto)
-    PB->>FE: Bayar (MON testnet gratis)
-    FE->>T: buy() + nilai = harga tiket
-    T->>T: cek: bayar cukup? sisa kuota?
-    T->>M: cetak tiket ERC-721 → milik pembeli
-    T->>T: MON disimpan kontrak → panitia tarik nanti (withdraw)
-    FE-->>PB: QR tiket muncul di "Tiket Saya"
+    PB->>FE: Open the event link (from the organizer's invitation)
+    FE->>T: read: name, price, REMAINING TICKETS (live)
+    FE-->>PB: Event page plus a "Get a ticket" button
+    PB->>FE: Click buy, then log in with email or Google
+    FE->>PR: request a wallet
+    PR-->>PB: an invisible wallet is created (no crypto jargon in front of the user)
+    PB->>FE: Pay (free testnet MON)
+    FE->>T: buy() with value equal to the ticket price
+    T->>T: check: is the payment enough? is the quota left?
+    T->>M: mint the ERC-721 ticket, owned by the buyer
+    T->>T: MON is held by the contract, for the organizer to withdraw later
+    FE-->>PB: The ticket QR appears under "My tickets"
 ```
 
-### 8.3 Hari-H: check-in dengan scanner
+### 8.3 The day itself: check-in with the scanner
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor PT as Petugas (HP panitia)
-    participant SC as Halaman Scanner
+    actor PT as Door staff (organizer's phone)
+    participant SC as Scanner page
     participant T as EventTickets.sol
 
-    PT->>SC: Login + buka halaman Scanner
-    loop Setiap peserta
-        PT->>SC: Arahkan kamera ke QR peserta
-        SC->>T: baca: pemilik tiket ini siapa? sudah terpakai?
-        alt Tiket sah & belum terpakai
+    PT->>SC: Log in and open the scanner page
+    loop For every attendee
+        PT->>SC: Point the camera at the attendee's QR
+        SC->>T: read: who owns this ticket? has it been used?
+        alt Ticket is valid and unused
             SC->>T: checkIn(tokenId)
-            T->>T: tandai terpakai + catat waktu
-            SC-->>PT: 🟢 VALID — silakan masuk
-        else Palsu / sudah dipakai / bukan miliknya
-            SC-->>PT: 🔴 TOLAK
+            T->>T: mark it used and record the time
+            SC-->>PT: 🟢 VALID — let them in
+        else Fake, already used, or not theirs
+            SC-->>PT: 🔴 REFUSED
         end
     end
 ```
 
-> **Catatan desain:** cek validitas dilakukan **dari chain**, bukan dari QR saja — jadi QR yang difoto/di-forward tetap tertolak kalau pemilik di chain tidak cocok.
+> **Design note:** validity is checked **against the chain**, not from the QR alone, so a photographed or forwarded QR is still refused when the on-chain owner does not match.
 
-### 8.4 Resale (fitur pembeda)
+### 8.4 Resale (the differentiating feature)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor S as Penjual (pemilik tiket)
+    actor S as Seller (ticket holder)
     participant FE as Frontend
     participant T as EventTickets.sol
-    actor B2 as Pembeli kedua
-    participant PJ as Panitia
+    actor B2 as Second buyer
+    participant PJ as Organizer
 
-    S->>FE: "Jual Ulang"
-    FE->>T: baca cap harga acara
-    FE-->>S: Sistem sarankan harga ≤ harga resmi
-    S->>T: listForSale(tokenId, harga)
-    T->>T: harga > cap → REVERT
-    B2->>FE: Lihat daftar tiket resale → beli
-    B2->>T: buyResale(tokenId) + MON
-    T->>PJ: potong fee 5% otomatis
-    T->>S: kirim 95% dana
-    T->>B2: tiket berpindah ke pembeli kedua
-    Note over B2,T: cap pembeli kedua TETAP harga resmi — calo tetap tidak bisa untung
+    S->>FE: "Resell"
+    FE->>T: read the event price cap
+    FE-->>S: The app suggests a price at or below the official price
+    S->>T: listForSale(tokenId, price)
+    T->>T: price above the cap -> REVERT
+    B2->>FE: Browse the resale listings, then buy
+    B2->>T: buyResale(tokenId) with MON
+    T->>PJ: deduct the 5% fee automatically
+    T->>S: send 95% of the money
+    T->>B2: the ticket moves to the second buyer
+    Note over B2,T: the second buyer's cap STAYS at the official price, so a scalper still cannot profit
 ```
 
-### 8.5 Upaya calo: transfer di luar jalur (di mana calo mati)
+### 8.5 A scalper's attempt: transferring outside the official path (where scalping dies)
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor C as Calo / pemilik nakal
-    participant W as Wallet (MetaMask dll.)
+    actor C as Scalper or rogue holder
+    participant W as Wallet (MetaMask and friends)
     participant T as EventTickets.sol
 
-    C->>W: transferFrom() / safeTransferFrom() langsung ke pembeli gelap
-    W->>T: kirim transaksi transfer liar
-    T->>T: hook _update(): pengirim bukan jalur resmi?
-    T-->>W: ❌ REVERT — transaksi gagal total
-    Note over C,T: Tiket tetap milik sah pemiliknya. Tidak hilang, tidak bisa dirampas, tidak bisa diselundupkan. Satu-satunya jalan keluar = pasar resale ber-cap.
+    C->>W: transferFrom() or safeTransferFrom() straight to a private buyer
+    W->>T: send the rogue transfer transaction
+    T->>T: the _update() hook: is the caller outside the official path?
+    T-->>W: ❌ REVERT — the transaction fails completely
+    Note over C,T: The ticket stays with its rightful owner. Cannot be lost, seized, or smuggled out. The only exit is the capped resale market.
 ```
 
-> Ini satu-satunya "kunci" sistem: ERC-721 punya titik kritis bernama `_update()` yang WAJIB dilewati semua perpindahan tiket. Kita override titik itu: **kalau perpindahan tidak berasal dari `buy`/`buyResale`/`mint` → tolak.**
-> Efek samping (jujur untuk write-up): kirim tiket gratis ke teman juga terblokir — bisa dibuka dengan flag `allowGift` per acara, default mati.
+> This is the system's one and only key: ERC-721 has a critical point called `_update()` that every ticket movement must pass through. We override that point: **if the movement does not come from `buy`, `buyResale` or `mint`, reject it.**
+> An honest side effect for the write-up: sending a ticket to a friend for free is blocked too. It could be opened up with an `allowGift` flag per event, off by default.
 
 ---
 
-## 9. Alur Kerja Dev: 4 Fase (10 Sep → 12 Okt)
+## 9. Development workflow: four phases (10 Sep to 12 Oct)
 
 ```mermaid
 flowchart TB
-    K(("MULAI<br/>kosong")) --> F0
-    F0["F0 · Fondasi (10–12 Sep)<br/>pasang Foundry, struktur repo,<br/>deploy kontrak dummy ke testnet"] --> G0{"RPC jalan?<br/>terlihat di explorer?"}
-    G0 -- tidak --> F0
-    G0 -- ya --> F1
-    F1["F1 · Kontrak inti (12–16 Sep)<br/>TicketFactory + EventTickets:<br/>buy, cap resale, anti-transfer, checkIn, fee"] --> G1{"forge test<br/>semua hijau?<br/>kontrak verified?"}
-    G1 -- tidak --> F1
-    G1 -- ya --> F2
-    F2["F2 · Frontend pembeli (17–23 Sep)<br/>Privy login, halaman acara,<br/>beli → QR, jual ulang"] --> G2{"Alur beli→QR→resale<br/>jalan di browser?"}
-    G2 -- tidak --> F2
-    G2 -- ya --> F3
-    F3["F3 · Frontend panitia (24–30 Sep)<br/>buat acara, dashboard live,<br/>halaman scanner kamera HP"] --> G3{"Scanner 2 HP<br/>berhasil live?"}
-    G3 -- tidak --> F3
-    G3 -- ya --> F4
-    F4["F4 · Bukti & submit (1–12 Okt)<br/>uji end-to-end 2 HP nyata, rekam demo,<br/>write-up, deploy Vercel, repo publik"] --> G4{"Semua syarat<br/>submit lengkap?"}
-    G4 -- tidak --> F4
-    G4 -- ya --> SUB["🚀 SUBMIT — target 12 Okt<br/>(deadline resmi 13 Okt)"]
+    K(("START<br/>empty")) --> F0
+    F0["F0 · Foundation (10–12 Sep)<br/>install Foundry, set up the repo,<br/>deploy a dummy contract to testnet"] --> G0{"Does the RPC work?<br/>Is it visible in the explorer?"}
+    G0 -- no --> F0
+    G0 -- yes --> F1
+    F1["F1 · Core contracts (12–16 Sep)<br/>TicketFactory + EventTickets:<br/>buy, resale cap, anti-transfer, checkIn, fee"] --> G1{"forge test<br/>all green?<br/>contract verified?"}
+    G1 -- no --> F1
+    G1 -- yes --> F2
+    F2["F2 · Buyer frontend (17–23 Sep)<br/>Privy login, event page,<br/>buy -> QR, resale"] --> G2{"Does buy -> QR -> resale<br/>work in the browser?"}
+    G2 -- no --> F2
+    G2 -- yes --> F3
+    F3["F3 · Organizer frontend (24–30 Sep)<br/>create event, live dashboard,<br/>phone camera scanner page"] --> G3{"Two phones, scanner<br/>working live?"}
+    G3 -- no --> F3
+    G3 -- yes --> F4
+    F4["F4 · Evidence and submission (1–12 Oct)<br/>end-to-end test on two real phones, record the demo,<br/>write-up, deploy to Vercel, public repo"] --> G4{"Are all submission<br/>requirements complete?"}
+    G4 -- no --> F4
+    G4 -- yes --> SUB["🚀 SUBMIT — target 12 Oct<br/>(official deadline 13 Oct)"]
 ```
 
-**Prinsip di tiap gerbang:** tidak ada fase lanjut sebelum fase sekarang TERBUKTI jalan (test lulus, deploy nyata, uji di HP nyata) — bukan "kayaknya udah oke". Kalau macet, berhenti dan rencanakan ulang, jangan dipaksakan.
+**The rule at every gate:** no phase starts until the current one is PROVEN to work (tests pass, the deploy is real, it is tested on real phones) rather than "looks fine". If you get stuck, stop and re-plan; do not force it.
 
-**"Tahap produksi" untuk hackathon ini** = app yang ter-deploy di Vercel (link publik bisa dibuka siapa saja) + kontrak live di Monad testnet + demo video + write-up + repo. Itu hasil akhir yang dinilai. (Mainnet & pembayaran uang nyata = cerita v2 setelah hackathon — sengaja tidak disentuh demi keamanan dan waktu.)
+**For this hackathon, "production" means:** an app deployed on Vercel (a public link anyone can open) plus a live contract on Monad testnet plus a demo video plus a write-up plus the repo. That is the finished result being judged. (Mainnet and real-money payments are a post-hackathon version 2 story, deliberately untouched for safety and time.)
 
 ---
 
-## 10. Directory Tree Lengkap (F0 → Produksi/Submit)
+## 10. Full directory tree (F0 to production/submission)
 
 ```text
-nempel/                                ← root repo Git
-├── README.md                         (F0→F4) wajah repo untuk juri: tagline, arsitektur, quickstart, link demo
+sticket/                               <- Git repo root
+├── README.md                         (F0->F4) the repo's face for judges: tagline, architecture, quickstart, demo link
 ├── LICENSE                            (F0) MIT
 ├── .gitignore                         (F0) node_modules, out, cache, broadcast, .env, dist
 │
 ├── docs/
-│   ├── blueprint.md                  ← file ini (dokumen master proyek)
-│   ├── architecture.md                (F0) semua diagram mermaid
-│   ├── runbook.md                     (F4) cara juri menjalankan semuanya tanpa nanya
+│   ├── blueprint.md                  <- this file (the project master document)
+│   ├── architecture.md                (F0) every mermaid diagram
+│   ├── runbook.md                     (F4) how a judge runs everything without asking
 │   └── submission/
-│       ├── writeup.md                 (F4) write-up resmi (masalah, solusi, anti-calo, limitasi)
-│       ├── demo-script.md             (F4) storyboard video ≤ 3 menit
-│       └── screenshots/               (F4) bukti visual (beli, QR, resale, scanner, explorer)
+│       ├── writeup.md                 (F4) the official write-up (problem, solution, anti-scalping, limitations)
+│       ├── demo-script.md             (F4) storyboard for a video of three minutes or less
+│       └── screenshots/               (F4) visual evidence (buy, QR, resale, scanner, explorer)
 │
-├── tasks/                             ← SUDAH ADA
+├── tasks/
 │   ├── plan.md · todo.md · lessons.md
-│   ├── structure.md                   acuan resmi struktur repo
-│   └── review.md                      (F4) section review pasca-submit
+│   ├── structure.md                   the official reference for the repo structure
+│   └── review.md                      (F4) the post-submission review section
 │
-├── contracts/                         ← proyek Foundry (perintah forge di sini)
-│   ├── foundry.toml                   (F0) konfig compiler + profile testnet
-│   ├── .env.example  /  .env 🔒       (F0) RPC Alchemy + key deployer [gitignored]
+├── contracts/                         <- the Foundry project (run forge commands here)
+│   ├── foundry.toml                   (F0) compiler configuration plus a testnet profile
+│   ├── .env.example  /  .env 🔒       (F0) Alchemy RPC plus the deployer key [gitignored]
 │   ├── src/
-│   │   ├── EventTickets.sol          (F1) ERC-721: buy, resale cap+fee, _update anti-calo, checkIn
-│   │   └── TicketFactory.sol         (F1) createEvent() → 1 kontrak per acara + registry
+│   │   ├── EventTickets.sol          (F1) ERC-721: buy, resale cap and fee, anti-scalping _update, checkIn
+│   │   └── TicketFactory.sol         (F1) createEvent() -> one contract per event plus a registry
 │   ├── test/
-│   │   ├── EventTickets.t.sol        (F1) 7 skenario: beli, kuota, cap, transfer liar revert, dsb.
-│   │   └── TicketFactory.t.sol       (F1) deploy anak + kontrol akses
+│   │   ├── EventTickets.t.sol        (F1) seven scenarios: buy, quota, cap, rogue transfer reverts, and so on
+│   │   └── TicketFactory.t.sol       (F1) deploys the child contract plus access control
 │   ├── script/
-│   │   └── Deploy.s.sol              (F0 dummy → F1 final)
-│   └── lib/ · out/ · cache/ · broadcast/   [gen] hasil Foundry — tidak di-commit
+│   │   └── Deploy.s.sol              (F0 dummy, then final in F1)
+│   └── lib/ · out/ · cache/ · broadcast/   [generated] Foundry output, not committed
 │
-└── app/                               ← Vite + React + TS (deploy ke Vercel)
+└── app/                               <- Vite + React + TS (deployed to Vercel)
     ├── package.json · vite.config.ts · tsconfig.json · index.html   (F0)
     ├── .env.example  /  .env 🔒       (F2) VITE_PRIVY_APP_ID, VITE_ALCHEMY_RPC_URL, VITE_FACTORY_ADDRESS [gitignored]
     ├── public/
     │   └── logo.svg · favicon.svg     (F0)
     └── src/
-        ├── main.tsx                   (F0) Privy + wagmi + router
-        ├── App.tsx                    (F0) tabel rute
+        ├── main.tsx                   (F0) Privy, wagmi and the router
+        ├── App.tsx                    (F0) route table
         ├── lib/
-        │   ├── chain.ts               (F0) Monad testnet 10143 + transport Alchemy
-        │   ├── contracts.ts           (F1) alamat kontrak + ABI binding
-        │   └── abis/                  (F1) [auto] ABI dari forge — jangan edit manual
+        │   ├── chain.ts               (F0) Monad testnet 10143 plus the Alchemy transport
+        │   ├── contracts.ts           (F1) contract address plus ABI binding
+        │   └── abis/                  (F1) [auto] ABI generated from forge, never edited by hand
         ├── components/                (F2/F3) Button, TicketCard, QRTicket, EventHeader,
         │                                     StatPill, ScanResult
         ├── hooks/                     (F2/F3) useEvent, useBuyTicket, useMyTickets,
         │                                     useResale, useCreateEvent, useDashboard, useCheckIn
-        └── pages/                     7 layar utama:
-            ├── EventPage.tsx          (F2) halaman acara + beli
-            ├── MyTicketsPage.tsx      (F2) "Tiket Saya" + QR
-            ├── ResalePage.tsx          (F2) pasar resale
-            ├── CreateEventPage.tsx     (F3) form panitia
-            ├── DashboardPage.tsx       (F3) penjualan real-time
-            └── ScannerPage.tsx         (F3) kamera HP + checkIn
+        └── pages/                     seven main screens:
+            ├── EventPage.tsx          (F2) the event page plus buying
+            ├── MyTicketsPage.tsx      (F2) "My tickets" plus QR
+            ├── ResalePage.tsx          (F2) the resale market
+            ├── CreateEventPage.tsx     (F3) the organizer form
+            ├── DashboardPage.tsx       (F3) real-time sales
+            └── ScannerPage.tsx         (F3) phone camera plus checkIn
 ```
 
-### Prinsip di balik struktur ini
+### Principles behind this structure
 
-- **2 "dunia" terpisah** — `contracts/` (Foundry/Solidity) dan `app/` (React) — masing-masing punya toolchain sendiri, tidak saling mencampur. Jembatan mereka hanya lewat folder `abis/` (di-copy otomatis dari build Foundry — tidak pernah diedit manual) + `contracts.ts` (alamat kontrak hasil deploy)
-- **`tasks/` tetap di root** — sesuai workflow (plan/todo/lessons + structure.md)
-- **Tanda fase (F0–F4)** = kapan tiap file lahir — struktur tumbuh bertahap, bukan dibuat semua di awal; jadi tiap fase selalu punya repo yang bisa jalan
-- **Yang sengaja TIDAK ada:** backend, database, folder mainnet, video `*.mp4` di repo (video di-host di luar, link-nya masuk writeup)
-- **Kontrol scope creep:** tidak boleh menambah halaman/luar dari 7 pages + 7 hooks ini tanpa update plan dulu
+- **Two separate worlds** — `contracts/` (Foundry and Solidity) and `app/` (React) — each with its own toolchain, never mixed. Their only bridge is the `abis/` folder (copied automatically from the Foundry build and never edited by hand) plus `contracts.ts` (the deployed contract address)
+- **`tasks/` stays at the root** — matching the workflow (plan, todo, lessons plus structure.md)
+- **The phase markers (F0 to F4)** record when each file is born — the structure grows in stages rather than being created all at once, so every phase has a repo that runs
+- **Deliberately absent:** a backend, a database, a mainnet folder, and `*.mp4` video files in the repo (the video is hosted elsewhere and linked from the write-up)
+- **Scope-creep control:** no extra pages and nothing beyond these seven pages and seven hooks without updating the plan first
 
-> Ketika menjalankan `git init` + `forge init contracts` + `vite create app` nanti, kerangka folder akan terbentuk otomatis oleh tool — file-file bertanda **(F0)** itulah yang diisi/ubah, sisanya tumbuh di fase berikutnya sesuai tag-nya.
+> When you eventually run `git init`, `forge init contracts` and the Vite scaffold, the folder skeleton appears automatically from the tools. The files marked **(F0)** are the ones to fill in or change; the rest grow in later phases according to their markers.
 
 ---
 
-## 11. Sponsor & Bounty Metropolis
+## 11. Metropolis sponsors and bounties
 
-### 🎯 Peta Lengkap Sponsor (17 bounty, 11 sponsor)
+### 🎯 The full sponsor map (17 bounties, 11 sponsors)
 
-| Sponsor | Bounty | Produk | Free tier? |
+| Sponsor | Bounty | Product | Free tier? |
 |---|---|---|---|
-| **Privy** | $5.000 | Login email/Google + wallet invisible | ✅ Gratis s/d ~1.000 MAU (±50K signature/bln) |
-| **Alchemy** | $1.000 kredit | RPC & infra blockchain | ✅ 30 juta compute unit/bln, 25 RPS |
-| **Monad Foundation (Mera)** | 2×$2.500 | Library passkey → akun on-chain 2 klik | ✅ Library gratis |
-| **Dynamic** | $5.000 | Login + wallet (kompetitor Privy) | ✅ s/d 1.000 MAU |
-| **Agora** | 2×$10.000 | Pembayaran stablecoin | Tier dev ada, tapi butuh integrasi |
-| **Kimi (Moonshot)** | $3.000 kredit | Model AI | ❌ API tanpa free tier (min. top-up $1) |
-| **Alibaba Cloud** | $5.000 kredit | Model AI (Qwen 3.8 Max) | ❌ Kredit berbayar |
-| **Kepler (Tencent)** | $2.000 kredit | Model AI (Hunyuan) | ❌ Kredit berbayar |
-| **Chainlink** | $3.000 | CRE (runtime multi-chain) | Untuk kebutuhan oracle/CCIP — overkill |
-| **Nansen AI** | $5.000 | Analitik on-chain | ❌ Bukan untuk MVP |
-| **Perpl** | 2 bounty ($5k+$3k) | API perps + analitik | ❌ Bukan domain kita |
-| **Metamask** | $2.500 | Plugin agent wallet | ❌ Bukan domain kita |
-| **Aurora Intents** | $5.000 | Likuiditas lintas chain | ❌ Bukan domain kita |
+| **Privy** | $5,000 | Email or Google login plus an invisible wallet | ✅ Free up to about 1,000 monthly active users, roughly 50,000 signatures per month |
+| **Alchemy** | $1,000 in credit | RPC and blockchain infrastructure | ✅ 30 million compute units per month, 25 requests per second |
+| **Monad Foundation (Mera)** | 2 x $2,500 | A passkey library for a two-click on-chain account | ✅ The library is free |
+| **Dynamic** | $5,000 | Login plus wallet (a Privy competitor) | ✅ Up to 1,000 monthly active users |
+| **Agora** | 2 x $10,000 | Stablecoin payments | A developer tier exists, but integration is required |
+| **Kimi (Moonshot)** | $3,000 in credit | AI models | ❌ No free API tier (minimum top-up of $1) |
+| **Alibaba Cloud** | $5,000 in credit | AI models (Qwen 3.8 Max) | ❌ Credit must be paid for |
+| **Kepler (Tencent)** | $2,000 in credit | AI models (Hunyuan) | ❌ Credit must be paid for |
+| **Chainlink** | $3,000 | CRE (multi-chain runtime) | Only for oracle or CCIP needs, which is overkill here |
+| **Nansen AI** | $5,000 | On-chain analytics | ❌ Not for an MVP |
+| **Perpl** | 2 bounties ($5k + $3k) | Perpetuals API plus analytics | ❌ Not our domain |
+| **Metamask** | $2,500 | An agent wallet plugin | ❌ Not our domain |
+| **Aurora Intents** | $5,000 | Cross-chain liquidity | ❌ Not our domain |
 
-### ✅ Yang KITA PAKAI (sesuai aturan: maksimal yang free)
+### ✅ What we actually use (per the rule: free wherever possible)
 
-**1. Privy — inti stack, tetap seperti plan. (bounty $5.000)**
-Free tier menampung ~1.000 pengguna aktif bulanan + ~50K signature — jauh lebih dari kebutuhan demo & uji. Sudah jadi pilihan login sejak awal, dan sekarang terkonfirmasi: pakai Privy = otomatis masuk nominasi bounty terbesar kategori infra consumer. Satu-satunya sponsor yang produknya **sudah ada di arsitektur kita** — zero kerja ekstra untuk ikut bounty.
+**1. Privy — core to the stack, exactly as planned. ($5,000 bounty)**
+The free tier covers about 1,000 monthly active users and roughly 50,000 signatures, far more than a demo and testing need. It was the login choice from the start, and it is now confirmed: using Privy automatically enters us for the largest infrastructure bounty in the consumer category. It is the only sponsor whose product is **already in our architecture**, so entering costs no extra work.
 
-**2. Alchemy — ganti RPC publik. (bounty $1.000 kredit)**
-Frontend butuh RPC untuk baca kontrak (sisa tiket, kepemilikan, status check-in). Public RPC Monad tidak stabil untuk demo. Alchemy free tier = 30 juta CU/bulan (≈ 1,8 juta request sederhana) — lebih dari cukup, gratis, dan "Best Projects using Alchemy" = bounty paling murah diraih.
-⚠️ Dicek setelah daftar: apakah Monad testnet 10143 sudah aktif di dashboard Alchemy (jika belum, cukup 1 email ke support — mereka sponsor resmi, hampir pasti sudah).
+**2. Alchemy — replacing the public RPC. ($1,000 credit bounty)**
+The frontend needs an RPC to read the contract (remaining tickets, ownership, check-in status). Monad's public RPC is not stable enough for a demo. Alchemy's free tier gives 30 million compute units a month, roughly 1.8 million simple requests, which is more than enough, free, and "Best Projects using Alchemy" is the cheapest bounty to win.
+⚠️ To check after signing up: whether Monad testnet 10143 is already active in the Alchemy dashboard. If not, one email to support should settle it; they are an official sponsor, so it very likely already is.
 
-**3. Mera (Monad Foundation) — opsional cerdas, bukan wajib. (bounty 2×$2.500)**
-Library gratis resmi Monad: buat akun pakai passkey HP dalam 2 klik, tanpa seed phrase. Dua jalan: **(a)** tetap Privy saja — aman, bounty lebih besar, sudah direncanakan; **(b)** kalau F2–F3 selesai cepat, tambahkan Mera sebagai *jalur login alternatif* ("Masuk dengan passkey") — langsung menembak 2 bounty Monad Foundation sekaligus + memperkuat cerita "invisible UX" di depan juri Monad. **Keputusan di F3, jangan sekarang** — jangan sampai dua sistem auth jadi beban solo dev.
+**3. Mera (Monad Foundation) — a smart optional, not a requirement. (2 x $2,500 bounty)**
+Monad's free official library creates an account with a phone passkey in two clicks and no seed phrase. Two paths: **(a)** stick with Privy alone, which is safe, worth a larger bounty, and already planned; **(b)** if F2 and F3 finish early, add Mera as an *alternative login route* ("Sign in with a passkey"), which targets two Monad Foundation bounties at once and strengthens the invisible-UX story in front of Monad's judges. **Decide in F3, not now** — two authentication systems must not become a burden for a solo developer.
 
-### 🟡 OPSIONAL (bonus kalau waktu sisa — jangan sampai mengorbankan inti)
+### 🟡 OPTIONAL (a bonus if time remains, never at the core's expense)
 
-**4. Fitur AI kecil via Kimi ($3.000) atau Qwen/Alibaba ($5.000)** — dua-duanya kredit, bukan free tier. Satu-satunya use case masuk akal untuk NEPEL: panitia mengetik judul acara → AI generate deskripsi + poster text. Kecil, manis, tapi butuh API key berbayar. Kalau ada kredit sisa, baru pikirkan; **jangan beli credit untuk ini.** Bounty "Best Community Team Project" ($5.000) tidak butuh teknologi khusus — hanya aktivitas komunitas yang jujur.
+**4. A small AI feature via Kimi ($3,000) or Qwen through Alibaba ($5,000)** — both are credit, not a free tier. The one sensible use case for Sticket: the organizer types an event title, and the AI generates a description and poster text. Small and charming, but it needs a paid API key. Only consider it if credit is left over, and **do not buy credit for this.** The "Best Community Team Project" bounty ($5,000) needs no special technology, only genuine community activity.
 
-**5. Agora ($10.000)** — hanya relevan jika suatu saat NEPEL menambahkan pembayaran stablecoin lintas negara; untuk MVP tiket testnet, skip dulu.
+**5. Agora ($10,000)** — relevant only if Sticket ever adds cross-border stablecoin payments. For a testnet ticket MVP, skip it for now.
 
-### ❌ Yang di-SKIP (biar fokus)
+### ❌ What we skip (to stay focused)
 
-Nansen, Perpl, Chainlink, Aurora, Metamask, Dynamic — atau bukan domain kita, atau duplikat pilihan yang sudah ada (Dynamic vs Privy — memakai dua-duanya malah red flag arsitektur, pilih satu).
+Nansen, Perpl, Chainlink, Aurora, Metamask and Dynamic are either outside our domain or duplicates of choices already made. Using both Dynamic and Privy would raise an architecture red flag, so pick one.
 
-### 💰 Total dampak (realistis, Rp0 → Rp0)
+### 💰 Total impact (realistically, from $0 to $0)
 
-- **Biaya infra tetap Rp0:** Monad testnet gratis (gas testnet), Privy free, Alchemy free, hosting Vercel/Netlify free, tanpa backend & DB (semua on-chain)
-- **Papan bounty realistis:** Privy ($5k) + Alchemy ($1k) + Mera ($5k jika integrasi) = **potensi $11.000 di atas hadiah track** — kerja ekstra mendekati nol untuk dua yang pertama
+- **Infrastructure cost stays at $0:** Monad testnet is free (testnet gas), Privy is free, Alchemy is free, Vercel or Netlify hosting is free, and there is no backend or database because everything is on-chain
+- **A realistic bounty board:** Privy ($5k) plus Alchemy ($1k) plus Mera ($5k if integrated) comes to **a potential $11,000 on top of the track prizes**, with close to zero extra work for the first two
 
-> **Catatan jujur:** di halaman resmi ada bagian "Participant resources — tooling every team gets for free during the build" yang isinya baru lengkap terlihat setelah masuk platform (pendukung tercatat: Tenderly, QuickNode, Envio, Kimi, Cleanverse). Setelah register, nilai mana yang layak dipakai.
+> **An honest note:** the official page has a section, "Participant resources — tooling every team gets for free during the build", whose contents only become fully visible after joining the platform. Supporters listed there include Tenderly, QuickNode, Envio, Kimi and Cleanverse. After registering, judge which ones are worth using.
 
-**Bottom line:** daftar → ganti RPC ke Alchemy → lanjut plan seperti semula (Privy) → Mera dipertimbangkan di F3.
-
----
-
-## 12. Syarat Submit Resmi (dari halaman Metropolis)
-
-- **Produk yang bisa dipakai** (working product) — bukan mockup
-- **Profil proyek publik** di platform
-- **Video demo singkat** (target ≤ 3 menit, rekaman 2 HP nyata)
-- **Write-up singkat:** fitur, kenapa on-chain, aturan anti-calo, batasan MVP (ditulis jujur — juri value kejujuran teknis)
-- **Link kode** (repo publik; juri harus bisa memverifikasi pekerjaan selama 6 minggu)
-- Penilaian 14–27 Okt, pemenang diumumkan 3 Nov
+**Bottom line:** sign up, switch the RPC to Alchemy, continue the plan as it stands with Privy, and consider Mera in F3.
 
 ---
 
-## 13. Kamus Mini
+## 12. Official submission requirements (from the Metropolis page)
 
-| Istilah | Arti |
+- **A product that can be used** (a working product, not a mockup)
+- **A public project profile** on the platform
+- **A short demo video** (target three minutes or less, recorded on two real phones)
+- **A short write-up:** the features, why it is on-chain, the anti-scalping rules, and the MVP's limitations, written honestly, because judges value technical honesty
+- **A code link** (a public repo; judges must be able to verify six weeks of work)
+- Judging runs 14–27 Oct, and winners are announced on 3 Nov
+
+---
+
+## 13. Mini glossary
+
+| Term | Meaning |
 |---|---|
-| **Wallet** | "Dompet" berisi kunci tanda tangan digital; Privy membuatnya otomatis dari email |
-| **Transaksi (tx)** | Permintaan menulis ke blockchain; harus ditandatangani wallet & bayar gas |
-| **Gas** | Biaya "ongkir" transaksi; di testnet pakai MON gratis dari faucet |
-| **Mint** | Mencetak NFT baru (tiket lahir) |
-| **ERC-721** | Standar NFT "one-of-a-kind" (tiap tiket unik bernomor) |
-| **RPC** | Pintu API frontend ke blockchain (kita pakai Alchemy) |
-| **Faucet** | Keran gratis token testnet |
-| **Explorer** | Situs untuk melihat isi blockchain (bukti deploy terlihat di sini) |
-| **Escrow** | Dana "ditahan" kontrak sampai diambil panitia — tidak ada pihak ketiga yang pegang uang |
+| **Wallet** | A "purse" holding a digital signing key; Privy creates one automatically from an email |
+| **Transaction (tx)** | A request to write to the blockchain; it must be signed by a wallet and pay gas |
+| **Gas** | The postage fee on a transaction; on testnet it is paid in free MON from the faucet |
+| **Mint** | Creating a new NFT, which is how a ticket is born |
+| **ERC-721** | The one-of-a-kind NFT standard, where every ticket is unique and numbered |
+| **RPC** | The API gateway from the frontend to the blockchain; we use Alchemy |
+| **Faucet** | A free tap for testnet tokens |
+| **Explorer** | A site for inspecting the blockchain, where the deploy evidence is visible |
+| **Escrow** | Funds or assets held by the contract until the organizer collects them, with no third party holding the money |
 
 ---
 
-## 📎 Ralat & Catatan Konversi
+## 📎 Corrections and conversion notes
 
-Dokumen ini dikonversi dari `desc.txt` (teks mentah hasil rangkuman chat). Ralat kecil yang diterapkan agar konsisten dengan dokumen resmi di `tasks/`:
+This document was converted from `desc.txt`, a raw summary of a chat. Small corrections were applied so that it matches the official documents under `tasks/`:
 
-- URL terpotong `metropoli` → `metropolis` (lengkap)
-- `PRIVYAPP_ID` → `VITE_PRIVY_APP_ID`, `ALCHEMY_RPC` → `VITE_ALCHEMY_RPC_URL`, `FACTORY_ADDRESS` → `VITE_FACTORY_ADDRESS` (mengikuti `tasks/structure.md`)
-- `update anti-calo` → `_update()` anti-calo (nama fungsi sebenarnya)
-- `Sticket` → `NEPEL` (salah ketik di 2 tempat)
-- Label blok diagram `mermaid.js` → `mermaid` (agar dirender GitHub/VS Code)
-- Semua substansi, angka, dan diagram dipertahankan persis seperti sumbernya.
+- A truncated URL, `metropoli`, was completed to `metropolis`
+- `PRIVYAPP_ID` became `VITE_PRIVY_APP_ID`, `ALCHEMY_RPC` became `VITE_ALCHEMY_RPC_URL`, and `FACTORY_ADDRESS` became `VITE_FACTORY_ADDRESS`, following `tasks/structure.md`
+- The guard hook is described as `_update()`, the real function name, and the anti-scalping wording replaces the earlier shorthand
+- Project name: `NEPEL` was renamed to `Sticket` throughout, and the document was translated into English
+- The mermaid block label `mermaid.js` became `mermaid`, so GitHub and VS Code render it
+- All substance, figures and diagrams are preserved exactly as in the source
+
+---
+
+## 📌 Status as built
+
+Where the shipped code differs from this plan, recorded so that neither a reader nor a judge is misled. The plan above describes the intent; the README describes what exists.
+
+- **One contract, no factory.** `TicketFactory.sol` was not built. An event is one `EventTickets` contract deployed with `script/Deploy.s.sol`, so creating an event is a deploy rather than a form, and no create-event page exists.
+- **Six pages, not seven.** Event, My tickets, Resale, Dashboard and Scanner exist, plus Terms, Privacy and Refunds. `CreateEventPage` has no contract to talk to.
+- **App configuration.** The app reads `VITE_MONAD_RPC_URL`, `VITE_EVENT_ADDRESS`, `VITE_SCANNER_EVENT_ADDRESS` and optionally `VITE_PRIVY_APP_ID`. The planned `VITE_ALCHEMY_RPC_URL` and `VITE_FACTORY_ADDRESS` do not apply without the factory.
+- **Scanner library.** `@zxing/browser` replaced `html5-qrcode`, because it is actively released and published with build provenance.
+- **Privy is optional and lazily loaded.** Email login activates only when an App ID is present; otherwise the app uses any injected browser wallet and never downloads Privy's bundle. Privy offers no gas sponsorship on a custom chain, so an embedded wallet starts empty and must be funded.
+- **Escrow changes what "owner" means.** While a ticket is listed, the contract owns it, so any interface showing a user's tickets must read the listing record rather than only `ownerOf`.
+- **The cap bounds the price, not profit.** A buyer of a discounted listing can resell at the official price and come out ahead. The README states this precisely rather than claiming that profit is impossible.
+- **No refunds.** The contract has no path that returns money to a buyer; capped resale is the only exit.
+- **This file lives at the repository root**, not under `docs/` as the tree above suggests.
+- **Not yet produced:** `docs/architecture.md`, `docs/runbook.md`, `docs/submission/*`, `tasks/structure.md`, `tasks/review.md`, the hosted deployment, and the demo video.
